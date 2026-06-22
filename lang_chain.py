@@ -4,6 +4,8 @@ from langchain_core.messages import HumanMessage
 from my_models import GEMINI_FLASH
 from my_keys import GEMINI_API_KEY, COHERE_API_KEY
 from my_helper import encode_image
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 # Inicializar el modelo Gemini
 llm = ChatGoogleGenerativeAI( 
@@ -20,8 +22,8 @@ llm = ChatGoogleGenerativeAI(
 pregunta_texto = "¿Qué canales de YouTube recomiendas para aprender más sobre smartphones?"
 
 # Consulta textual con Gemini
-respuesta_texto = llm.invoke(pregunta_texto)
-print(f"Respuesta Gemini: {respuesta_texto.content}\n")
+# respuesta_texto = llm.invoke(pregunta_texto)
+# print(f"Respuesta Gemini: {respuesta_texto.content}\n")
 
 # Consulta textual con Cohere
 # respuesta_texto_cohere = llm_cohere.invoke(pregunta_texto)
@@ -35,22 +37,35 @@ imagen = encode_image('datos/ejemplo_grafico.jpg')
 
 pregunta = "Describe la imagen:"
 
-mensaje = HumanMessage(
-    content = [
-        {
-            "type": "text",
-            "text": pregunta
-        },
-        {
-            "type": "image_url",
-            "image_url": f"data:image/jpeg;base64,{imagen}"
-        }
+template_analisis = ChatPromptTemplate.from_messages(
+    [
+        ("system", 
+         """
+         Asume que eres analista de imágenes. Tu principal tarea consiste en: analizar una imagen para 
+         extraer las informaciones más relevantes de manera objetiva.
+         """
+        ),
+        (
+            "user", 
+            [
+                {
+                    "type": "text",
+                    "text": f"{pregunta}"
+                },
+                {
+                    "type": "image_url",
+                    "image_url": f"data:image/jpeg;base64,{imagen}"
+                }
+            ]
+        )
     ]
 )
 
 # Enviar el mensaje multimodal
-respuesta = llm.invoke([mensaje])
+cadena_analisis = template_analisis | llm | StrOutputParser()
+
+respuesta_analisis = cadena_analisis.invoke({"imagen:": imagen})
 
 #Mostrar el resultado
 print("Descripción de la imagen:")
-print(respuesta)
+print(respuesta_analisis)
