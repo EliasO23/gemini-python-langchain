@@ -5,8 +5,9 @@ from my_models import GEMINI_FLASH
 from my_keys import GEMINI_API_KEY, COHERE_API_KEY
 from my_helper import encode_image
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
 from langchain_core.globals import set_debug
+from detalles_imagen import DetallesImagen
 
 set_debug(True)
 
@@ -71,13 +72,9 @@ template_analisis = ChatPromptTemplate.from_messages(
 # Enviar el mensaje multimodal
 cadena_analisis = template_analisis | llm | StrOutputParser()
 
-respuesta_analisis = cadena_analisis.invoke({"imagen_informada": imagen})
-
-#Mostrar el resultado
-print("Descripción de la imagen:")
-print(respuesta_analisis)
-
-
+parser_json = JsonOutputParser(
+    pydantic_object=DetallesImagen
+)
 
 #Otra cadena para generar un resumen de la respuesta del analisis de la imagen
 template_respuesta = PromptTemplate(
@@ -88,11 +85,17 @@ template_respuesta = PromptTemplate(
 
             #RESULTADO DE LA IMAGEN
             {respuesta_analisis_imagen}
+
+            #FORMATO SALIDA
+            {formato_salida}
             """,
-            input_variables=["respuesta_analisis_imagen"]
+            input_variables=["respuesta_analisis_imagen"],
+            partial_variables={
+                "formato_salida":parser_json.get_format_instructions()
+            }
 )
 
-cadena_resumen = template_respuesta | llm | StrOutputParser()
+cadena_resumen = template_respuesta | llm | parser_json
 
 cadena_compuesta = (cadena_analisis | cadena_resumen)
 
