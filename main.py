@@ -9,7 +9,8 @@ def main():
         verbose=True
     )
 
-    pregunta = "Realiza el analisis de la imagen ejemplo_grafico.jpg"
+    # pregunta = "Realiza el analisis de la imagen ejemplo_grafico.jpg"
+    pregunta = "Quiero que me expliques como funcionan los desvios condicionales"
 
     respuesta = ejecutor.invoke({"input": pregunta})
 
